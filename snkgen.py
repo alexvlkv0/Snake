@@ -3,6 +3,7 @@ from threading import Thread
 from pynput import keyboard
 import time
 import os
+import menu
 
 class Snake:
 	def __init__(self,size=10,speed=2):
@@ -78,20 +79,19 @@ class Snake:
       		#make snake
 			s = ''
 			n = self.score // 10
-			if n < 2: s = art[1]
-			elif n >= 2 and n < 4: s = art[2]
+			if n < 1: s = art[1]
+			elif n >= 1 and n < 3: s = art[2]
 			else: #makes tail longer acording to score
 				head = art[3].split('\n')
 				tail = art[0].split('\n')
 				for i in range(len(head)-1):
-					s += '\n' + tail[i]*(n-4) + head[i]
-			print(f'{s}{art[-2]}')
+					s += '\n' + tail[i]*(n-3) + head[i]
+			print(f'{s}\n{art[4]}')
 		else:
-			print(f'{art[-1]}')
+			print(f'{art[5]}')
 			#self.score = 777
 		print(f'\nYou got \033[32m {self.score} \033[0m points, congrats')
 		self.flag = True
-  
 
 def on_press(key):
     if key == keyboard.Key.up:
@@ -110,10 +110,18 @@ def take_input():
             listener.join()
 
 if __name__ == "__main__":
-	snake = Snake(size=4, speed=2)
+    #menu
+	a = menu.Menu()
+	a.show()
+	vals = a.get_input()
+	a.close()
+
+	#game
+	snake = Snake(size=vals[0], speed=vals[1])
 	t1 = Thread(target=lambda: snake.start())
 	t2 = Thread(target=take_input)
 	t1.start()
 	t2.start()
 	t2.join()
 	snake.end(1)
+	
