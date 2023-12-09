@@ -7,13 +7,17 @@ class Menu:
         self.numbers = [self.art[i].split("\n") for i in range(10)]
         self.snake_art = [self.art[i].split("\n") for i in range(10, 14)]
         for i in range(len(self.snake_art)-1): self.snake_art[i].pop() # get rid of empty strings
-        #print("\n".join(self.snake_art[3]))
         self.val = [self.numbers[0]]*2
         self.gradient = ['$','X','x','=','+',';',':','.']
         self.dist = 0
     
+    def starting_screen(self):
+        newText, loadText, gameText = [self.art[i].split("\n") for i in range(14, 17)]
+        for i in range(len(newText)):
+            print(newText[i] + ' '*5 + loadText[i])
+
     def copy_art(self):
-        with open ('menu.txt', 'r') as f:
+        with open ('data/menu.txt', 'r') as f:
             a, i = [""], 0
             for line in f.readlines():
                 if line != '\n': a[i] += line
@@ -37,39 +41,37 @@ class Menu:
         self.change_num(0, val)
         val1 = int(input())
         self.change_num(1, val1)
-        return [val, val1]
+        return {'size':val, 'speed':val1}
         
-    def collapse(self, b, g):
-        queue,i = [], 0
-        while True:
-            if i <= len(b)-1: queue.insert(0, b[i])
-            elif queue: queue.pop()
-            else: break
-            i+=1
-            for pos in range(len(queue)):
-                if pos < len(g):
-                    queue[pos] =  ''.join(map(lambda a: g[pos] if a != ' ' else a, queue[pos]))
-                else:
-                    queue.pop()
-            yield ('\n'.join(reversed(queue))) + '\n' + '\n'.join(b[i:])
-
-    def close(self):
+    def collapse(self, speed):
         full_art = []
         for i in self.snake_art:
             full_art += i
         print('\n'.join(full_art))
-        for line in self.collapse(full_art, self.gradient):
+        
+        queue,i = [], 0
+        while True:
+            if i <= len(full_art)-1: queue.insert(0, full_art[i])
+            elif queue: queue.pop()
+            else: break
+            i+=1
+            for pos in range(len(queue)):
+                if pos < len(self.gradient):
+                    queue[pos] =  ''.join(map(lambda a: self.gradient[pos] if a != ' ' else a, queue[pos]))
+                else:
+                    queue.pop()
             os.system('cls')
-            print(line + '\n')
-            time.sleep(0.2)
-    
+            print('\n'.join(reversed(queue)) + '\n' + '\n'.join(full_art[i:]))
+            time.sleep(1/(speed+4))
+
     def show(self):
         for line in self.snake_art:
             print('\n'.join(line))
 
 if __name__ == '__main__':
     a=Menu()
+    a.starting_screen()
     a.show()
-    a.get_input()
-    a.close()
+    vals=a.get_input()
+    a.collapse(vals['speed'])
     
