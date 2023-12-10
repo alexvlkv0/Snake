@@ -70,7 +70,7 @@ class Snake:
 			print(' ' + '‾‾' * self.size + '‾')
 			time.sleep(1 / self.speed)
    
-	def end(self, outcome): #1 - win, 0 - lose
+	def end(self, outcome): 
 		#read arts
 		art = ['']*6
 		with open ('data/art.txt', 'r') as f:
