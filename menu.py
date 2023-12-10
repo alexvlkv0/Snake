@@ -61,7 +61,7 @@ class Menu:
                 else:
                     queue.pop()
             os.system('cls')
-            print('\n'.join(reversed(queue)) + '\n' + '\n'.join(full_art[i:]))
+            print('\n'*(i-len(self.gradient)) + '\n'.join(reversed(queue)) + '\n' + '\n'.join(full_art[i:]))
             time.sleep(1/(speed+4))
 
     def show(self):
