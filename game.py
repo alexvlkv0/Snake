@@ -82,7 +82,7 @@ class Snake:
 		if outcome == 1:
       		#make snake
 			s = ''
-			n = 8 # self.score // 10
+			n = self.score // 10
 			if n < 1: s = art[1]
 			elif n >= 1 and n < 3: s = art[2]
 			else: #makes tail longer acording to score
