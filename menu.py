@@ -11,10 +11,18 @@ class Menu:
         self.gradient = ['$','X','x','=','+',';',':','.']
         self.dist = 0
     
-    def starting_screen(self):
+    def load_screen(self):
         newText, loadText, gameText = [self.art[i].split("\n") for i in range(14, 17)]
+        full_art = []
         for i in range(len(newText)):
-            print(newText[i] + ' '*5 + loadText[i])
+            full_art.append(newText[i] + ' '*5 + loadText[i])
+        for line in gameText:
+            full_art.append(' '*3 + line + ' '*15 + line)
+        print('\n'.join(full_art))
+        load =  True if int(input('\nEnter 1/2: ')) == 2 else False
+        self.collapse(full_art, 10)
+        return load
+        
 
     def copy_art(self):
         with open ('data/menu.txt', 'r') as f:
@@ -41,17 +49,19 @@ class Menu:
         self.change_num(0, val)
         val1 = int(input())
         self.change_num(1, val1)
+        #collapse
+        art = []
+        for i in self.snake_art:
+            art += i
+        print('\n'.join(art))
+        self.collapse(art, val1)
+        
         return {'size':val, 'speed':val1}
         
-    def collapse(self, speed):
-        full_art = []
-        for i in self.snake_art:
-            full_art += i
-        print('\n'.join(full_art))
-        
+    def collapse(self, art, speed):
         queue,i = [], 0
         while True:
-            if i <= len(full_art)-1: queue.insert(0, full_art[i])
+            if i <= len(art)-1: queue.insert(0, art[i])
             elif queue: queue.pop()
             else: break
             i+=1
@@ -61,8 +71,8 @@ class Menu:
                 else:
                     queue.pop()
             os.system('cls')
-            print('\n'*(i-len(self.gradient)) + '\n'.join(reversed(queue)) + '\n' + '\n'.join(full_art[i:]))
-            time.sleep(1/(speed+4))
+            print('\n'*(i-len(self.gradient)) + '\n'.join(reversed(queue)) + '\n' + '\n'.join(art[i:]))
+            time.sleep(1/(speed+6))
 
     def show(self):
         for line in self.snake_art:
@@ -70,8 +80,6 @@ class Menu:
 
 if __name__ == '__main__':
     a=Menu()
-    a.starting_screen()
+    a.load_screen()
     a.show()
     vals=a.get_input()
-    a.collapse(vals['speed'])
-    

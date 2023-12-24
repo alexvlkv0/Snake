@@ -1,19 +1,19 @@
-import time, os, menu, random, pickle
+import time, os, menu, random
 from pynput import keyboard
 from threading import Thread
 
-class Snake:
+class Game:
 	def __init__(self,size=10,speed=3):
-		self.speed = speed
-		self.score = 0
-		self.size = size
-		self.flag = False
-		self.direction = 'd'
+		self.speed = speed # скорость змейки
+		self.score = 0 # счет
+		self.size = size # размер поля
+		self.flag = False # проигрыш
+		self.direction = [-1, 0] # направление движения [по строкам, по столбцам]
+		self.input = self.direction # вводимое с клавиатуры направление
 		self.prev = []
 
 	def snake_gen(self,size): #Screen instances generator
 		snake = [[self.size//2, self.size//2] for _ in (1, 2)] if not self.prev else self.prev
-		end = self.size-1
 		head = snake[0]
 		apple = self.spawn_apple() #spawn apple
   
@@ -40,17 +40,18 @@ class Snake:
 			#move
 			for i in range(len(snake)-1,0,-1): 
 				snake[i] = snake[i-1][:]
-    
-			#turn
-			match self.direction:
-				case "w":
-					head[0] = head[0]-1 if head[0] != 0 else end #up
-				case 's':
-					head[0] = head[0]+1 if head[0] != end else 0 #down
-				case 'a':
-					head[1] = head[1]-1 if head[1] != 0 else end #left
-				case 'd':
-					head[1] = head[1]+1 if head[1] != end else 0 #right
+			#change direction
+			if self.input[0] != -self.direction[0] or self.input[1] != -self.direction[1]: # checking if we are not moving opposite way
+				self.direction = self.input
+			#turn	
+			head[0] += self.direction[0]
+			head[1] += self.direction[1]
+			# if you cross a border you appear on the other side
+			if head[0] == -1: head[0] = self.size-1
+			elif head[0] == self.size: head[0] = 0
+			elif head[1] == -1: head[1] = self.size-1
+			elif head[1] == self.size: head[1] = 0
+   
 			if head in snake[1:]: self.end(1) #check if head crashes into tail
 			if self.size**2 == len(snake): self.end(0) #win
 
@@ -101,49 +102,60 @@ class Snake:
 		self.flag = True
   
 	def save(self):
-		try:
-			with open("data/data.pickle", "wb") as f:
-				pickle.dump(self, f)
-		except Exception as ex:
-			print("Error during saving:", ex)
+		with open("data/data.txt", "w") as f:
+			f.write('\n'.join(str(k) for k in [self.size,self.speed,self.score, ' '.join(str(i) for i in self.direction)]) + '\n')
+			for piece in self.prev:
+				f.write(f'{str(piece[0])} {str(piece[1])}\n')
 		
 	@classmethod
 	def load(self):
 		try:
-			with open("data/data.pickle", "rb") as f:
-				return pickle.load(f)
-		except Exception as ex:
-			print("Error during loading or no save file found", ex)
+			with open("data/data.txt", "r") as f:
+				data = [line.replace('\n', '') for line in f.readlines()]
+				loaded = Game(int(data[0]), int(data[1]))
+				data.pop(0)
+				data.pop(0)
+				loaded.score, loaded.direction, *loaded.prev = data
+				loaded.score = int(loaded.score)
+				loaded.direction = [int(i) for i in loaded.direction.split()]
+				loaded.input = loaded.direction
+				loaded.prev = [[int(i) for i in piece.split()] for piece in loaded.prev]
+			return loaded
+		except Exception as ex:pass
 
-class Controlls:
-    def on_press(self, k):
-        try:
-            if k.char in ['w','a','s','d']:
-                snake.direction = k.char
-        except AttributeError:
-            if k == keyboard.Key.esc:
-                return False
+def on_press(k):
+	df, sp = keyboard.KeyCode, keyboard.Key # default KeyCode class for all letters and special for arrows
+	# wasd or arrows controls. A bit messed up because arrow keys are different class
+	if (type(k) == df and k.char == 'w') or (type(k) == sp and k == keyboard.Key.up):
+		snake.input = [-1, 0] 
+	elif (type(k) == df and k.char == 's') or (type(k) == sp and k == keyboard.Key.down):
+		snake.input = [1, 0]
+	elif (type(k) == df and k.char == 'a') or (type(k) == sp and k == keyboard.Key.left):
+		snake.input = [0, -1]
+	elif (type(k) == df and k.char == 'd') or (type(k) == sp and k == keyboard.Key.right):
+		snake.input = [0, 1]
+	if type(k) == sp and k == keyboard.Key.esc:
+		return False
 
-    def listen(self):
-        with keyboard.Listener(on_press=self.on_press) as listener:
-            listener.join()
+def listen():
+	with keyboard.Listener(on_press=on_press) as listener:
+		listener.join()
 
 if __name__ == "__main__":
  
 	# loading screen
 	a = menu.Menu()
+	load = a.load_screen()
 	
 	# load
-	snake = Snake.load()
-	if not snake or snake.flag: # if file is empty(failed to load) or snake dead initialize again
+	if load: snake = Game.load()
+	if not load or not snake: # if file is empty or failed to load
 		a.show()
 		vals = a.get_input()
-		a.collapse(vals['speed'])
-		snake = Snake(size=vals['size'], speed=vals['speed'])
+		snake = Game(size=vals['size'], speed=vals['speed'])
   
 	#controlls
-	c = Controlls()
-	t1 = Thread(target=lambda: c.listen())
+	t1 = Thread(target=lambda: listen())
 	t1.start()
 	
  	#game
@@ -151,5 +163,5 @@ if __name__ == "__main__":
 	t2.start()
 	
 	t1.join() # wait for escape key to close
-	snake.save() # save before closing so flag == false otherwise if dead flag == true and save will not load
+	if not snake.flag: snake.save() # if snake is alive - save
 	snake.end(3)
